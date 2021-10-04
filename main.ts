@@ -1,37 +1,35 @@
 radio.onReceivedNumber(function on_received_number(receivedNumber: number) {
     
-    if (receivedNumber == 0) {
-        strip.setPixelColor(red, neopixel.colors(NeoPixelColors.Black))
-        red += speed
-        strip.setPixelColor(red, neopixel.colors(NeoPixelColors.Red))
-    } else if (receivedNumber == 1) {
-        strip.setPixelColor(blue, neopixel.colors(NeoPixelColors.Black))
-        blue += speed
-        strip.setPixelColor(blue, neopixel.colors(NeoPixelColors.Blue))
-    } else {
-        strip.setPixelColor(purple, neopixel.colors(NeoPixelColors.Black))
-        purple += speed
-        strip.setPixelColor(purple, neopixel.colors(NeoPixelColors.Purple))
-    }
-    
-    if (blue >= track) {
-        strip.showColor(neopixel.colors(NeoPixelColors.Blue))
-    } else if (red >= track) {
-        strip.showColor(neopixel.colors(NeoPixelColors.Red))
-    } else if (purple >= track) {
-        strip.showColor(neopixel.colors(NeoPixelColors.Purple))
-    } else {
+    if (!game_finished) {
+        for (let index = 0; index < speed; index++) {
+            strip.setPixelColor(players[receivedNumber][0], neopixel.colors(NeoPixelColors.Black))
+            players[receivedNumber][0] += 1
+            for (let p of players) {
+                strip.setPixelColor(p[0], neopixel.colors(p[1]))
+            }
+            strip.show()
+            basic.pause(5)
+        }
+        if (players[receivedNumber][0] > track) {
+            game_finished = true
+        }
         
     }
     
-    strip.show()
 })
+function reset() {
+    
+    players = [[0, NeoPixelColors.Red], [1, NeoPixelColors.Blue], [2, NeoPixelColors.Purple]]
+    strip.clear()
+    for (let q of players) {
+        strip.setPixelColor(q[0], neopixel.colors(q[1]))
+    }
+    strip.show()
+}
+
 input.onButtonPressed(Button.A, function on_button_pressed_a() {
     
     speed += 1
-})
-input.onButtonPressed(Button.AB, function on_button_pressed_ab() {
-    reset()
 })
 input.onButtonPressed(Button.B, function on_button_pressed_b() {
     
@@ -41,29 +39,26 @@ input.onButtonPressed(Button.B, function on_button_pressed_b() {
     }
     
 })
-function reset() {
-    
-    purple = 0
-    blue = 1
-    red = 2
-    strip.clear()
-    strip.setPixelColor(red, neopixel.colors(NeoPixelColors.Red))
-    strip.setPixelColor(blue, neopixel.colors(NeoPixelColors.Blue))
-    strip.setPixelColor(purple, neopixel.colors(NeoPixelColors.Purple))
-    strip.show()
-}
-
-let purple = 0
-let blue = 0
-let red = 0
-let track = 0
-let speed = 0
-let strip : neopixel.Strip = null
+input.onButtonPressed(Button.AB, reset)
+let game_finished = false
+let speed = 10
+let track = 300
+let strip = neopixel.create(DigitalPin.P13, 300, NeoPixelMode.RGB)
+let players = [[0, NeoPixelColors.Red], [0, NeoPixelColors.Blue], [0, NeoPixelColors.Purple]]
 radio.setGroup(1)
-strip = neopixel.create(DigitalPin.P13, 300, NeoPixelMode.RGB)
 reset()
-speed = 3
-track = 300
 basic.forever(function on_forever() {
+    
+    for (let r of players) {
+        if (r[0] >= track) {
+            strip.showColor(neopixel.colors(r[1]))
+            basic.pause(100)
+        }
+        
+    }
+    if (game_finished) {
+        game_finished = false
+        soundExpression.happy.play()
+    }
     
 })

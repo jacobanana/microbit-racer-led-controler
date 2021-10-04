@@ -1,68 +1,61 @@
 def on_received_number(receivedNumber):
-    global red, blue, purple
-    if receivedNumber == 0:
-        strip.set_pixel_color(red, neopixel.colors(NeoPixelColors.BLACK))
-        red += speed
-        strip.set_pixel_color(red, neopixel.colors(NeoPixelColors.RED))
-    elif receivedNumber == 1:
-        strip.set_pixel_color(blue, neopixel.colors(NeoPixelColors.BLACK))
-        blue += speed
-        strip.set_pixel_color(blue, neopixel.colors(NeoPixelColors.BLUE))
-    else:
-        strip.set_pixel_color(purple, neopixel.colors(NeoPixelColors.BLACK))
-        purple += speed
-        strip.set_pixel_color(purple, neopixel.colors(NeoPixelColors.PURPLE))
-    if blue >= track:
-        strip.show_color(neopixel.colors(NeoPixelColors.BLUE))
-    elif red >= track:
-        strip.show_color(neopixel.colors(NeoPixelColors.RED))
-    elif purple >= track:
-        strip.show_color(neopixel.colors(NeoPixelColors.PURPLE))
-    else:
-        pass
-    strip.show()
+    global game_finished, track
+    if not game_finished:
+        for index in range(speed):
+            strip.set_pixel_color(players[receivedNumber][0],
+                neopixel.colors(NeoPixelColors.BLACK))
+            players[receivedNumber][0] += 1
+            for p in players:
+                strip.set_pixel_color(p[0], neopixel.colors(p[1]))
+            strip.show()
+            basic.pause(5)
+
+        if players[receivedNumber][0] > track:
+            game_finished = True
 radio.on_received_number(on_received_number)
 
 def on_button_pressed_a():
     global speed
     speed += 1
-input.on_button_pressed(Button.A, on_button_pressed_a)
-
-def on_button_pressed_ab():
-    reset()
-input.on_button_pressed(Button.AB, on_button_pressed_ab)
 
 def on_button_pressed_b():
     global speed
     speed += -1
     if speed < 1:
         speed = 1
-input.on_button_pressed(Button.B, on_button_pressed_b)
 
 def reset():
-    global purple, blue, red
-    purple = 0
-    blue = 1
-    red = 2
+    global players
+    players = [[0, NeoPixelColors.RED],
+        [1, NeoPixelColors.BLUE],
+        [2, NeoPixelColors.PURPLE]]
     strip.clear()
-    strip.set_pixel_color(red, neopixel.colors(NeoPixelColors.RED))
-    strip.set_pixel_color(blue, neopixel.colors(NeoPixelColors.BLUE))
-    strip.set_pixel_color(purple, neopixel.colors(NeoPixelColors.PURPLE))
+    for q in players:
+        strip.set_pixel_color(q[0], neopixel.colors(q[1]))
     strip.show()
 
+input.on_button_pressed(Button.A, on_button_pressed_a)
+input.on_button_pressed(Button.B, on_button_pressed_b)
+input.on_button_pressed(Button.AB, reset)
 
-purple = 0
-blue = 0
-red = 0
-track = 0
-speed = 0
-strip: neopixel.Strip = None
-radio.set_group(1)
-strip = neopixel.create(DigitalPin.P13, 300, NeoPixelMode.RGB)
-reset()
-speed = 3
+
+game_finished: bool = False
+speed = 10
 track = 300
+strip: neopixel.Strip = neopixel.create(DigitalPin.P13, 300, NeoPixelMode.RGB)
+players: List[List[number]] = [[0, NeoPixelColors.RED],
+    [0, NeoPixelColors.BLUE],
+    [0, NeoPixelColors.PURPLE]]
+radio.set_group(1)
+reset()
 
 def on_forever():
-    pass
+    global game_finished
+    for r in players:
+        if r[0] >= track:
+            strip.show_color(neopixel.colors(r[1]))
+            basic.pause(100)
+    if game_finished:
+        game_finished = False
+        soundExpression.happy.play()
 basic.forever(on_forever)
